@@ -11,7 +11,7 @@ async def get_nbu_rates():
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                'https://bank.gov.ua/NBUStatService/v1/statist/exchange?json',
+                'https://bank.gov.ua/NBU_uonia?id_api=UONIA_UnsecLoansDepo&json',
                 timeout=5.0
             )
             if response.status_code == 200:
