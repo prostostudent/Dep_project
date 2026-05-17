@@ -10,7 +10,6 @@ app = FastAPI()
 async def get_nbu_rates():
     try:
         async with httpx.AsyncClient() as client:
-            # Використовуємо таймаут 5 секунд на випадок повільної відповіді сервера
             response = await client.get(
                 'https://bank.gov.ua/NBUStatService/v1/statist/exchange?json',
                 timeout=5.0
@@ -20,11 +19,11 @@ async def get_nbu_rates():
             else:
                 return {"error": f"НБУ повернув статус {response.status_code}", "fallback": True}
     except Exception as e:
-        # У разі офлайну або помилки мережі повертаємо структуру з міткою помилки
         return {"error": str(e), "fallback": True}
 
-# Головна сторінка інформаційної системи
+# Додаємо підтримку методів GET та HEAD для кореневого маршруту (виправляє помилку 405 на Render)
 @app.get("/", response_class=HTMLResponse)
+@app.head("/", response_class=HTMLResponse)
 async def read_index():
     path = os.path.join("templates", "index.html")
     with open(path, "r", encoding="utf-8") as f:
