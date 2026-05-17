@@ -157,9 +157,16 @@
         async function fetchMarketRates() {
             const statusIndicator = document.getElementById('data-status');
             try {
-                const response = await fetch('https://bank.gov.ua/NBUStatService/v1/statist/exchange?json');
-                if (!response.ok) throw new Error('Неможливо отримати дані з API НБУ');
+                // Зміна URL на локальний Python-ендпоінт для уникнення CORS-блокувань
+                const response = await fetch('/api/nbu-rates');
+                if (!response.ok) throw new Error('Серверна помилка при отриманні даних');
+
                 const data = await response.json();
+
+                // Якщо Python повернув прапорець fallback, кидаємо виняток для переходу в блок catch
+                if (data.fallback || data.error) {
+                    throw new Error(data.error || 'НБУ повернув невалідні дані');
+                }
 
                 let nbuSignal = 0.132;
                 if (data && data.length > 0) {
@@ -171,10 +178,10 @@
 
                 document.getElementById('param-r0').value = nbuSignal.toFixed(3);
 
-                statusIndicator.innerHTML = '<span class="h-2 w-2 rounded-full bg-emerald-500"></span> НБУ API (Дані синхронізовано)';
+                statusIndicator.innerHTML = '<span class="h-2 w-2 rounded-full bg-emerald-500"></span> НБУ API (Дані синхронізовано через Python)';
                 statusIndicator.className = "text-sm font-semibold flex items-center gap-1 text-emerald-500";
             } catch (e) {
-                console.warn("API НБУ запит перенаправлено на локальний стійкий кеш:", e.message);
+                console.warn("Запит до НБУ перенаправлено на локальний стійкий кеш бекенду:", e.message);
                 statusIndicator.innerHTML = '<span class="h-2 w-2 rounded-full bg-amber-500"></span> Локальний API Кеш (Офлайн)';
                 statusIndicator.className = "text-sm font-semibold flex items-center gap-1 text-amber-500";
             }
@@ -323,23 +330,21 @@
             document.getElementById('metric-asymptote').innerText = (asymptote * 100).toFixed(2) + " %";
 
             // ВІЗУАЛІЗАЦІЯ 1: Крива доходності
-            // Дані API - Зелені
             let traceMarket = {
                 x: marketData.maturities,
                 y: marketData.rates,
                 mode: 'markers+lines',
                 name: 'Ринкові дані (API НБУ)',
-                marker: { size: 10, color: 'rgb(16, 185, 129)' }, // Зелений
-                line: { dash: 'dot', color: 'rgb(16, 185, 129)' } // Зелений
+                marker: { size: 10, color: 'rgb(16, 185, 129)' },
+                line: { dash: 'dot', color: 'rgb(16, 185, 129)' }
             };
 
-            // Прогноз/Аналітика - Сині
             let traceAnalytical = {
                 x: xPoints,
                 y: yAnalytical,
                 mode: 'lines',
                 name: 'Прогнозований розв\'язок',
-                line: { color: 'rgb(37, 99, 235)', width: 3 } // Синій
+                line: { color: 'rgb(37, 99, 235)', width: 3 }
             };
 
             let layoutYield = {
@@ -359,27 +364,25 @@
                     x: mcData.timeSteps,
                     y: mcData.trajectories[p],
                     mode: 'lines',
-                    line: { width: 0.7, opacity: 0.35, color: 'rgb(156, 163, 175)' }, // Сірий для фонових траєкторій
+                    line: { width: 0.7, opacity: 0.35, color: 'rgb(156, 163, 175)' },
                     showlegend: false
                 });
             }
 
-            // Очікуваний прогноз (Середнє) - Синій
             tracesPaths.push({
                 x: mcData.timeSteps,
                 y: yMonteCarloMean,
                 mode: 'lines',
                 name: 'Прогнозований тренд (E[r_t])',
-                line: { color: 'rgb(37, 99, 235)', width: 4 } // Синій
+                line: { color: 'rgb(37, 99, 235)', width: 4 }
             });
 
-            // Вертикальна лінія-маркер "Прогноз на 2 місяці вперед" - Темно-синя
             tracesPaths.push({
                 x: [targetTime, targetTime],
                 y: [Math.min(...mcData.trajectories.flat()), Math.max(...mcData.trajectories.flat())],
                 mode: 'lines',
                 name: '🔮 Відмітка (2 міс.)',
-                line: { color: 'rgb(30, 64, 175)', width: 2.5, dash: 'dash' } // Темно-синій
+                line: { color: 'rgb(30, 64, 175)', width: 2.5, dash: 'dash' }
             });
 
             let layoutPaths = {
