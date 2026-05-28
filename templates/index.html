@@ -180,7 +180,7 @@ let marketData={
   source:'fallback'
 };
 
-const NBU_DISCOUNT_RATE_URL='https://bank.gov.ua/NBUStatService/v1/statdirectory/discount?json';
+const NBU_DISCOUNT_RATE_URL='https://bank.gov.ua/NBU_uonia?id_api=UONIA_UnsecLoansDepo&json';
 const NBU_EXCHANGE_URL='https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?json';
 
 async function fetchNBU(){
@@ -213,7 +213,7 @@ async function fetchNBU(){
         if(data2&&data2.length>0){
           const usd=data2.find(x=>x.cc==='USD');
           if(usd){
-            r0=0.135;
+            r0=0.15;
             rateSource=`Курс USD: ${usd.rate.toFixed(2)} ₴ → базова ставка`;
             rateDate=`Дата: ${usd.exchangedate||'—'}`;
             marketData.rates=buildYieldCurve(r0);
@@ -224,7 +224,7 @@ async function fetchNBU(){
   }
 
   if(!r0){
-    r0=0.135;
+    r0=0.15;
     rateSource='Локальний кеш (API недоступне)';
     rateDate='Використовуються резервні дані';
     dot.className='status-dot dot-red';
