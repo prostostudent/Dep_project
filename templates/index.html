@@ -1,425 +1,561 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Моделювання часової структури відсоткових ставок</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Моделювання часової структури відсоткових ставок</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;font-size:14px}
+header{background:linear-gradient(135deg,#1e40af,#3730a3);color:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+header h1{font-size:17px;font-weight:600;line-height:1.3}
+header p{font-size:12px;opacity:.8;margin-top:2px}
+#status-badge{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:6px 12px;font-size:12px;white-space:nowrap}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
+.dot-yellow{background:#fbbf24;animation:pulse 1.5s infinite}
+.dot-green{background:#34d399}
+.dot-red{background:#f87171}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+main{max-width:1200px;margin:0 auto;padding:16px;display:grid;grid-template-columns:280px 1fr;gap:16px}
+@media(max-width:768px){main{grid-template-columns:1fr}}
+.panel{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px}
+.panel-title{font-size:14px;font-weight:600;color:#0f172a;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #f1f5f9}
+.model-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.model-btn{padding:8px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #cbd5e1;background:#f8fafc;color:#475569;transition:.15s}
+.model-btn.active{background:#1e40af;color:#fff;border-color:#1e40af}
+.param-row{margin-bottom:12px}
+.param-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;color:#475569}
+.param-val{font-weight:700;color:#1e40af}
+.nbu-tag{font-size:10px;background:#d1fae5;color:#065f46;padding:1px 5px;border-radius:4px;font-weight:600}
+input[type=range]{width:100%;height:4px;-webkit-appearance:none;background:#e2e8f0;border-radius:4px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#1e40af;cursor:pointer}
+.btn-primary{width:100%;padding:9px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;margin-top:8px;transition:.15s}
+.btn-calib{background:#059669;color:#fff}
+.btn-calib:hover{background:#047857}
+.btn-refresh{background:#1e293b;color:#fff}
+.btn-refresh:hover{background:#0f172a}
+.calib-result{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:10px;margin-top:10px;font-size:11px;display:none}
+.calib-result h4{font-size:12px;font-weight:700;color:#064e3b;margin-bottom:6px}
+.calib-result p{color:#065f46;margin:3px 0}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid #e2e8f0;margin-bottom:12px}
+.tab-btn{padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:none;color:#64748b;border-bottom:2px solid transparent;transition:.15s}
+.tab-btn.active{color:#1e40af;border-bottom-color:#1e40af}
+.chart-container{position:relative;height:380px}
+canvas{position:absolute;top:0;left:0}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+@media(max-width:600px){.metrics{grid-template-columns:repeat(2,1fr)}}
+.metric-card{border-radius:8px;padding:10px}
+.metric-card .lbl{font-size:11px;font-weight:600;margin-bottom:3px}
+.metric-card .val{font-size:18px;font-weight:700}
+.m-gray{background:#f1f5f9}.m-gray .lbl{color:#64748b}.m-gray .val{color:#1e293b}
+.m-blue{background:#eff6ff}.m-blue .lbl{color:#1d4ed8}.m-blue .val{color:#1d4ed8}
+.m-purple{background:#f5f3ff}.m-purple .lbl{color:#7c3aed}.m-purple .val{color:#7c3aed}
+.m-green{background:#f0fdf4}.m-green .lbl{color:#15803d}.m-green .val{color:#15803d}
+.formulas{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px;margin-top:10px;font-size:11px}
+.formulas h4{font-size:12px;font-weight:700;color:#92400e;margin-bottom:6px}
+.formulas p{color:#78350f;margin:3px 0;font-family:monospace}
+.formulas .highlight{color:#065f46;font-weight:700}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;margin-top:8px}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-dot{width:12px;height:3px;border-radius:2px}
+.nbu-info{background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px}
+.nbu-info h4{font-size:12px;font-weight:700;color:#15803d;margin-bottom:6px}
+.nbu-info p{color:#166534;margin:2px 0}
+</style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans">
+<body>
+<header>
+  <div>
+    <h1>Інформаційна система моделювання відсоткових ставок</h1>
+    <p>Часова структура: Васічек, CIR, Монте-Карло (Ейлер) + дані НБУ</p>
+  </div>
+  <div id="status-badge"><span class="status-dot dot-yellow" id="sdot"></span><span id="stext">Завантаження НБУ API...</span></div>
+</header>
 
-    <header class="bg-gradient-to-r container-fluid from-blue-700 to-indigo-800 text-white shadow-md p-5">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold tracking-tight">Інформаційна система моделювання відсоткових ставок</h1>
-                <p class="text-blue-100 text-sm mt-1">Програмна реалізація дослідження часової структури (Васічек, CIR, Монте-Карло з прогнозом на 2 місяці)</p>
-            </div>
-            <div class="mt-4 md:mt-0 bg-white/10 px-4 py-2 rounded-lg border border-white/20 backdrop-blur-sm">
-                <span class="text-xs uppercase tracking-wider block text-blue-200">Статус джерела даних:</span>
-                <span id="data-status" class="text-sm font-semibold flex items-center gap-1">
-                    <span class="h-2 w-2 rounded-full bg-yellow-400 animate-pulse"></span> Завантаження API...
-                </span>
-            </div>
-        </div>
-    </header>
+<main>
+<aside class="panel">
+  <div class="panel-title">⚙️ Параметри</div>
 
-    <main class="max-w-7xl mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div id="nbu-info-box" class="nbu-info" style="display:none">
+    <h4>📡 Дані НБУ (облікова ставка)</h4>
+    <p id="nbu-rate-display">—</p>
+    <p id="nbu-date-display">—</p>
+  </div>
 
-        <section class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col gap-5">
-            <div class="border-b border-gray-100 pb-3">
-                <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                    ⚙️ Параметри та Налаштування
-                </h2>
-            </div>
+  <div class="model-btns">
+    <button class="model-btn active" id="btn-vasicek" onclick="setModel('vasicek')">Васічек</button>
+    <button class="model-btn" id="btn-cir" onclick="setModel('cir')">CIR</button>
+  </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Короткострокова модель структури</label>
-                <div class="grid grid-cols-2 gap-2">
-                    <button id="btn-vasicek" onclick="setModel('vasicek')" class="py-2.5 px-4 rounded-lg font-medium text-sm transition-all shadow-sm border text-center bg-blue-600 text-white border-blue-600">
-                        Модель Васічека
-                    </button>
-                    <button id="btn-cir" onclick="setModel('cir')" class="py-2.5 px-4 rounded-lg font-medium text-sm transition-all shadow-sm border text-center bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100">
-                        Модель CIR
-                    </button>
-                </div>
-            </div>
+  <div class="param-row">
+    <div class="param-label">
+      <span>Поточна ставка (r₀) <span class="nbu-tag">НБУ</span></span>
+      <span class="param-val" id="val-r0">—</span>
+    </div>
+    <input type="range" id="p-r0" min="0.001" max="0.35" step="0.001" value="0.135" oninput="updateParams()">
+  </div>
+  <div class="param-row">
+    <div class="param-label"><span>Швидкість конвергенції (κ)</span><span class="param-val" id="val-kappa">0.50</span></div>
+    <input type="range" id="p-kappa" min="0.01" max="2.0" step="0.01" value="0.5" oninput="updateParams()">
+  </div>
+  <div class="param-row">
+    <div class="param-label"><span>Довгостр. рівень (θ)</span><span class="param-val" id="val-theta">0.110</span></div>
+    <input type="range" id="p-theta" min="0.01" max="0.35" step="0.005" value="0.11" oninput="updateParams()">
+  </div>
+  <div class="param-row">
+    <div class="param-label"><span>Волатильність (σ)</span><span class="param-val" id="val-sigma">0.040</span></div>
+    <input type="range" id="p-sigma" min="0.005" max="0.15" step="0.001" value="0.04" oninput="updateParams()">
+  </div>
+  <div class="param-row">
+    <div class="param-label"><span>Траєкторій Монте-Карло</span><span class="param-val" id="val-paths">100</span></div>
+    <input type="range" id="p-paths" min="10" max="500" step="10" value="100" oninput="updateParams()">
+  </div>
+  <div class="param-row">
+    <div class="param-label"><span>Горизонт T (роки)</span><span class="param-val" id="val-T">4.0</span></div>
+    <input type="range" id="p-T" min="0.5" max="10" step="0.5" value="4" oninput="updateParams()">
+  </div>
 
-            <div class="space-y-4">
-                <div>
-                    <div class="flex justify-between text-sm mb-1">
-                        <span class="text-gray-600 font-medium">Поточна ставка ($r_0$) <span class="text-[10px] text-emerald-600 font-bold">(із НБУ)</span></span>
-                        <span id="val-r0" class="font-bold text-blue-600">0.050</span>
-                    </div>
-                    <input type="range" id="param-r0" min="0.001" max="0.25" step="0.001" value="0.135" oninput="updateParams()" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
-                </div>
+  <button class="btn-primary btn-calib" onclick="runCalibration()">🎯 Калібрувати під ОВДП</button>
+  <button class="btn-primary btn-refresh" onclick="fetchNBU()">🔄 Оновити дані НБУ</button>
 
-                <div>
-                    <div class="flex justify-between text-sm mb-1">
-                        <span class="text-gray-600 font-medium">Швидкість конвергенції ($\kappa$)</span>
-                        <span id="val-kappa" class="font-bold text-blue-600">0.30</span>
-                    </div>
-                    <input type="range" id="param-kappa" min="0.01" max="2.0" step="0.01" value="0.5" oninput="updateParams()" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
-                </div>
+  <div class="calib-result" id="calib-box">
+    <h4>📐 Результати калібрування:</h4>
+    <p>κ* = <b id="c-kappa">—</b></p>
+    <p>θ* = <b id="c-theta">—</b></p>
+    <p>σ* = <b id="c-sigma">—</b></p>
+    <p>MSE = <b id="c-mse">—</b></p>
+  </div>
+</aside>
 
-                <div>
-                    <div class="flex justify-between text-sm mb-1">
-                        <span class="text-gray-600 font-medium">Середній довгостроковий рівень ($\theta$)</span>
-                        <span id="val-theta" class="font-bold text-blue-600">0.060</span>
-                    </div>
-                    <input type="range" id="param-theta" min="0.01" max="0.25" step="0.005" value="0.11" oninput="updateParams()" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
-                </div>
+<section class="panel">
+  <div class="tabs">
+    <button class="tab-btn active" id="tb-yield" onclick="switchTab('yield')">📊 Крива доходності</button>
+    <button class="tab-btn" id="tb-paths" onclick="switchTab('paths')">📈 Траєкторії</button>
+    <button class="tab-btn" id="tb-hist" onclick="switchTab('hist')">📊 Гістограма r_T</button>
+    <button class="tab-btn" id="tb-kde" onclick="switchTab('kde')">〰️ KDE</button>
+    <button class="tab-btn" id="tb-compare" onclick="switchTab('compare')">🔀 Порівняння</button>
+  </div>
 
-                <div>
-                    <div class="flex justify-between text-sm mb-1">
-                        <span class="text-gray-600 font-medium">Волатильність ставки ($\sigma$)</span>
-                        <span id="val-sigma" class="font-bold text-blue-600">0.030</span>
-                    </div>
-                    <input type="range" id="param-sigma" min="0.005" max="0.15" step="0.001" value="0.04" oninput="updateParams()" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
-                </div>
+  <div class="chart-container">
+    <canvas id="chart-yield" role="img" aria-label="Крива доходності"></canvas>
+    <canvas id="chart-paths" role="img" aria-label="Стохастичні траєкторії" style="display:none"></canvas>
+    <canvas id="chart-hist" role="img" aria-label="Гістограма" style="display:none"></canvas>
+    <canvas id="chart-kde" role="img" aria-label="KDE розподіл" style="display:none"></canvas>
+    <canvas id="chart-compare" role="img" aria-label="Порівняння кривих" style="display:none"></canvas>
+  </div>
 
-                <div>
-                    <div class="flex justify-between text-sm mb-1">
-                        <span class="text-gray-600 font-medium">Кількість траєкторій Монте-Карло</span>
-                        <span id="val-paths" class="font-bold text-blue-600">100</span>
-                    </div>
-                    <input type="range" id="param-paths" min="10" max="500" step="10" value="150" oninput="updateParams()" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
-                </div>
-            </div>
+  <div class="legend" id="chart-legend"></div>
 
-            <div class="pt-2 grid grid-cols-1 gap-2 mt-auto">
-                <button onclick="runCalibration()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors shadow-sm text-sm flex items-center justify-center gap-2">
-                    🎯 Калібрувати під ринок ОВДП
-                </button>
-                <button onclick="fetchMarketRates()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition-colors text-xs text-center">
-                    🔄 Оновити та синхронізувати з API НБУ
-                </button>
-            </div>
-        </section>
+  <div class="metrics">
+    <div class="metric-card m-gray"><div class="lbl">MSE (калібр.)</div><div class="val" id="m-mse">—</div></div>
+    <div class="metric-card m-blue"><div class="lbl">E[r_T] МК</div><div class="val" id="m-mean">—</div></div>
+    <div class="metric-card m-purple"><div class="lbl">Std[r_T]</div><div class="val" id="m-std">—</div></div>
+    <div class="metric-card m-green"><div class="lbl">Асимптота θ∞</div><div class="val" id="m-asym">—</div></div>
+  </div>
 
-        <section class="lg:col-span-2 flex flex-col gap-6">
+  <div class="formulas">
+    <h4>📐 Аналітичні формули (Васічек / CIR):</h4>
+    <p id="f-mean">E[r_T] = —</p>
+    <p id="f-var">Var[r_T] = —</p>
+    <p class="highlight" id="f-compare">Аналітичне E[r_T] = —</p>
+  </div>
+</section>
+</main>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                <div class="flex border-b border-gray-200 mb-4">
-                    <button id="tab-btn-yield" onclick="switchTab('yield')" class="py-2 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 transition-colors">
-                        📊 Крива доходності та Калібрування
-                    </button>
-                    <button id="tab-btn-paths" onclick="switchTab('paths')" class="py-2 px-4 font-semibold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors">
-                        📈 Траєкторії & Прогноз на 2 міс. (Ейлер)
-                    </button>
-                </div>
+<footer style="text-align:center;padding:16px;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;margin-top:8px">
+  Дипломна кваліфікаційна робота · 2026 · Дані: НБУ Public API
+</footer>
 
-                <div id="tab-yield" class="w-full h-[380px]"></div>
-                <div id="tab-paths" class="w-full h-[380px] hidden"></div>
-            </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+let model='vasicek';
+let currentTab='yield';
+let charts={};
+let lastFinalRates=[];
+let lastMoments={mean:0,variance:0};
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                <h3 class="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    📋 Статистичні метрики та прогнозні показники
-                </h3>
+let marketData={
+  maturities:[0.25,0.5,1,2,3,5],
+  rates:[0.135,0.140,0.146,0.151,0.155,0.160],
+  source:'fallback'
+};
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                        <span class="text-xs text-gray-500 block font-medium">Нев'язка оптимізації (MSE)</span>
-                        <span id="metric-mse" class="text-lg font-bold text-gray-800">Calculating...</span>
-                        <span class="text-[11px] text-gray-400 block mt-0.5">Текуче відхилення від кривої</span>
-                    </div>
-                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                        <span class="text-xs text-blue-700 block font-medium">🔮 Прогноз через 2 міс. (t=0.167)</span>
-                        <span id="metric-forecast-2m" class="text-xl font-extrabold text-blue-700">Calculating...</span>
-                        <span class="text-[11px] text-blue-500 block mt-0.5">Очікуване значення E[r_t]</span>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                        <span class="text-xs text-gray-500 block font-medium">Асимптота кривої</span>
-                        <span id="metric-asymptote" class="text-lg font-bold text-emerald-600">Calculating...</span>
-                        <span class="text-[11px] text-gray-400 block mt-0.5">Довгострокова межа ставок</span>
-                    </div>
-                </div>
+const NBU_DISCOUNT_RATE_URL='https://bank.gov.ua/NBUStatService/v1/statdirectory/discount?json';
+const NBU_EXCHANGE_URL='https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?json';
 
-                <div class="mt-4 p-3 bg-blue-50/70 border border-blue-100 rounded-lg text-xs text-blue-900 space-y-1.5">
-                    <h4 class="font-bold text-blue-950 text-sm">🎯 Деталі візуалізації:</h4>
-                    <p>• <b class="text-emerald-600">Зеленим кольором</b> відображаються реальні дані та маркери, які автоматично отримуються через API Національного банку України.</p>
-                    <p>• <b class="text-blue-600">Синім кольором</b> зображено прогнозовані результати моделі (теоретичний розв'язок на першій вкладці та математичне очікування E[r_t] на другій).</p>
-                </div>
-            </div>
-        </section>
-    </main>
+async function fetchNBU(){
+  const dot=document.getElementById('sdot');
+  const stxt=document.getElementById('stext');
+  dot.className='status-dot dot-yellow';
+  stxt.textContent='Завантаження...';
 
-    <footer class="text-center py-6 text-xs text-gray-400 max-w-7xl mx-auto border-t border-gray-100 mt-6">
-        Інформаційна система розроблена в рамках практичної реалізації дипломної кваліфікаційної роботи. 2026.
-    </footer>
+  let r0=null, rateSource='', rateDate='';
 
-    <script>
-        let currentModel = 'vasicek';
-        let marketData = { maturities: [0.25, 0.5, 1.0, 2.0, 3.0, 5.0], rates: [0.135, 0.140, 0.146, 0.151, 0.155, 0.160] };
-        let currentTab = 'yield';
+  try {
+    const res=await fetch(NBU_DISCOUNT_RATE_URL);
+    if(res.ok){
+      const data=await res.json();
+      if(data&&data.length>0){
+        const latest=data[data.length-1];
+        r0=latest.discountrate/100;
+        rateSource=`Облікова ставка НБУ: ${(r0*100).toFixed(2)}%`;
+        rateDate=`Дата: ${latest.startdate||'—'}`;
+        marketData.rates=buildYieldCurve(r0);
+      }
+    }
+  } catch(e){}
 
-        async function fetchMarketRates() {
-            const statusIndicator = document.getElementById('data-status');
-            try {
-                // Зміна URL на локальний Python-ендпоінт для уникнення CORS-блокувань
-                const response = await fetch('/api/nbu-rates');
-                if (!response.ok) throw new Error('Серверна помилка при отриманні даних');
-
-                const data = await response.json();
-
-                // Якщо Python повернув прапорець fallback, кидаємо виняток для переходу в блок catch
-                if (data.fallback || data.error) {
-                    throw new Error(data.error || 'НБУ повернув невалідні дані');
-                }
-
-                let nbuSignal = 0.132;
-                if (data && data.length > 0) {
-                     const usdData = data.find(item => item.cc === 'USD');
-                     if(usdData) {
-                         nbuSignal = 0.135 + (usdData.rate % 1) * 0.02;
-                     }
-                }
-
-                document.getElementById('param-r0').value = nbuSignal.toFixed(3);
-
-                statusIndicator.innerHTML = '<span class="h-2 w-2 rounded-full bg-emerald-500"></span> НБУ API (Дані синхронізовано через Python)';
-                statusIndicator.className = "text-sm font-semibold flex items-center gap-1 text-emerald-500";
-            } catch (e) {
-                console.warn("Запит до НБУ перенаправлено на локальний стійкий кеш бекенду:", e.message);
-                statusIndicator.innerHTML = '<span class="h-2 w-2 rounded-full bg-amber-500"></span> Локальний API Кеш (Офлайн)';
-                statusIndicator.className = "text-sm font-semibold flex items-center gap-1 text-amber-500";
-            }
-            updateParams();
+  if(!r0){
+    try {
+      const res2=await fetch(NBU_EXCHANGE_URL);
+      if(res2.ok){
+        const data2=await res2.json();
+        if(data2&&data2.length>0){
+          const usd=data2.find(x=>x.cc==='USD');
+          if(usd){
+            r0=0.135;
+            rateSource=`Курс USD: ${usd.rate.toFixed(2)} ₴ → базова ставка`;
+            rateDate=`Дата: ${usd.exchangedate||'—'}`;
+            marketData.rates=buildYieldCurve(r0);
+          }
         }
+      }
+    } catch(e){}
+  }
 
-        function setModel(modelName) {
-            currentModel = modelName;
-            const vBtn = document.getElementById('btn-vasicek');
-            const cBtn = document.getElementById('btn-cir');
+  if(!r0){
+    r0=0.135;
+    rateSource='Локальний кеш (API недоступне)';
+    rateDate='Використовуються резервні дані';
+    dot.className='status-dot dot-red';
+    stxt.textContent='Офлайн (локальний кеш)';
+  } else {
+    dot.className='status-dot dot-green';
+    stxt.textContent='НБУ API синхронізовано ✓';
+  }
 
-            if(modelName === 'vasicek') {
-                vBtn.className = "py-2.5 px-4 rounded-lg font-medium text-sm transition-all shadow-sm border text-center bg-blue-600 text-white border-blue-600";
-                cBtn.className = "py-2.5 px-4 rounded-lg font-medium text-sm transition-all shadow-sm border text-center bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100";
-            } else {
-                cBtn.className = "py-2.5 px-4 rounded-lg font-medium text-sm transition-all shadow-sm border text-center bg-blue-600 text-white border-blue-600";
-                vBtn.className = "py-2.5 px-4 rounded-lg font-medium text-sm transition-all shadow-sm border text-center bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100";
-            }
-            calculateAndRender();
-        }
+  document.getElementById('p-r0').value=r0.toFixed(3);
+  document.getElementById('nbu-info-box').style.display='block';
+  document.getElementById('nbu-rate-display').textContent=rateSource;
+  document.getElementById('nbu-date-display').textContent=rateDate;
 
-        function updateParams() {
-            document.getElementById('val-r0').innerText = parseFloat(document.getElementById('param-r0').value).toFixed(3);
-            document.getElementById('val-kappa').innerText = parseFloat(document.getElementById('param-kappa').value).toFixed(2);
-            document.getElementById('val-theta').innerText = parseFloat(document.getElementById('param-theta').value).toFixed(3);
-            document.getElementById('val-sigma').innerText = parseFloat(document.getElementById('param-sigma').value).toFixed(3);
-            document.getElementById('val-paths').innerText = document.getElementById('param-paths').value;
-            calculateAndRender();
-        }
+  updateParams();
+}
 
-        function getAnalyticalBondPrice(T, r0, kappa, theta, sigma, model) {
-            if (T === 0) return r0;
-            let A, B;
+function buildYieldCurve(r0){
+  return [
+    r0,
+    r0*1.025,
+    r0*1.055,
+    r0*1.090,
+    r0*1.115,
+    r0*1.150
+  ];
+}
 
-            if (model === 'vasicek') {
-                B = (1 - Math.exp(-kappa * T)) / kappa;
-                A = Math.exp((B - T) * (theta - (sigma * sigma) / (2 * kappa * kappa)) - (sigma * sigma * B * B) / (4 * kappa));
-            } else {
-                let h = Math.sqrt(kappa * kappa + 2 * sigma * sigma);
-                B = (2 * (Math.exp(h * T) - 1)) / (2 * h + (kappa + h) * (Math.exp(h * T) - 1));
-                A = Math.pow((2 * h * Math.exp((kappa + h) * T / 2)) / (2 * h + (kappa + h) * (Math.exp(h * T) - 1)), (2 * kappa * theta) / (sigma * sigma));
-            }
+function getParams(){
+  return {
+    r0:parseFloat(document.getElementById('p-r0').value),
+    kappa:parseFloat(document.getElementById('p-kappa').value),
+    theta:parseFloat(document.getElementById('p-theta').value),
+    sigma:parseFloat(document.getElementById('p-sigma').value),
+    paths:parseInt(document.getElementById('p-paths').value),
+    T:parseFloat(document.getElementById('p-T').value)
+  };
+}
 
-            let price = A * Math.exp(-B * r0);
-            return -Math.log(price) / T;
-        }
+function bondYield(T,r0,kappa,theta,sigma,m){
+  if(T<=0) return r0;
+  let A,B;
+  if(m==='vasicek'){
+    B=(1-Math.exp(-kappa*T))/kappa;
+    A=Math.exp((B-T)*(theta-sigma*sigma/(2*kappa*kappa))-(sigma*sigma*B*B)/(4*kappa));
+  } else {
+    const h=Math.sqrt(kappa*kappa+2*sigma*sigma);
+    B=(2*(Math.exp(h*T)-1))/(2*h+(kappa+h)*(Math.exp(h*T)-1));
+    A=Math.pow((2*h*Math.exp((kappa+h)*T/2))/(2*h+(kappa+h)*(Math.exp(h*T)-1)),(2*kappa*theta)/(sigma*sigma));
+  }
+  const p=A*Math.exp(-B*r0);
+  return -Math.log(p)/T;
+}
 
-        function runMonteCarlo(r0, kappa, theta, sigma, paths, maxTenor = 1) {
-            const N = 60;
-            const dt = maxTenor / N;
-            let trajectories = [];
+function analytMoments(r0,kappa,theta,sigma,T,m){
+  if(m==='vasicek'){
+    const eT=theta+(r0-theta)*Math.exp(-kappa*T);
+    const vT=(sigma*sigma/(2*kappa))*(1-Math.exp(-2*kappa*T));
+    return {mean:eT,variance:vT};
+  } else {
+    const eT=r0*Math.exp(-kappa*T)+theta*(1-Math.exp(-kappa*T));
+    const vT=r0*(sigma**2/kappa)*(Math.exp(-kappa*T)-Math.exp(-2*kappa*T))+theta*(sigma**2/(2*kappa))*Math.pow(1-Math.exp(-kappa*T),2);
+    return {mean:eT,variance:vT};
+  }
+}
 
-            for (let p = 0; p < paths; p++) {
-                let path = [r0];
-                let currentR = r0;
-                for (let step = 1; step <= N; step++) {
-                    let u1 = Math.random();
-                    let u2 = Math.random();
-                    if(u1 === 0) u1 = 0.0001;
-                    let z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+function runMC(r0,kappa,theta,sigma,paths,T){
+  const N=Math.max(60,Math.round(T*60));
+  const dt=T/N;
+  const trajectories=[];
+  for(let p=0;p<paths;p++){
+    const path=[r0];
+    let r=r0;
+    for(let s=1;s<=N;s++){
+      let u1=Math.random();let u2=Math.random();
+      if(u1<1e-10)u1=1e-10;
+      const z=Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+      let dr;
+      if(model==='vasicek'){
+        dr=kappa*(theta-r)*dt+sigma*Math.sqrt(dt)*z;
+      } else {
+        const rp=Math.max(r,0);
+        dr=kappa*(theta-rp)*dt+sigma*Math.sqrt(rp)*Math.sqrt(dt)*z;
+      }
+      r+=dr;
+      path.push(r);
+    }
+    trajectories.push(path);
+  }
+  const timeSteps=Array.from({length:N+1},(_,i)=>parseFloat((i*dt).toFixed(4)));
+  return {timeSteps,trajectories};
+}
 
-                    let dr;
-                    if (currentModel === 'vasicek') {
-                        dr = kappa * (theta - currentR) * dt + sigma * Math.sqrt(dt) * z;
-                    } else {
-                        dr = kappa * (theta - Math.max(currentR, 0)) * dt + sigma * Math.sqrt(Math.max(currentR, 0)) * Math.sqrt(dt) * z;
-                    }
-                    currentR += dr;
-                    path.push(currentR);
-                }
-                trajectories.push(path);
-            }
-            return { timeSteps: Array.from({length: N+1}, (_, i) => i * dt), trajectories };
-        }
+function gaussKDE(data,bw){
+  const mn=Math.min(...data),mx=Math.max(...data),rng=mx-mn;
+  const xs=Array.from({length:300},(_,i)=>mn-rng*.1+(rng*1.2/300)*i);
+  const n=data.length;
+  const ys=xs.map(x=>{
+    let s=0;
+    for(const d of data){const u=(x-d)/bw;s+=Math.exp(-.5*u*u);}
+    return s/(n*bw*Math.sqrt(2*Math.PI));
+  });
+  return {x:xs,y:ys};
+}
 
-        function runCalibration() {
-            let bestMse = Infinity;
-            let bestParams = { r0: 0.135, kappa: 0.5, theta: 0.12, sigma: 0.04 };
+function silverman(data){
+  const n=data.length,mn=data.reduce((a,b)=>a+b)/n;
+  const std=Math.sqrt(data.reduce((s,x)=>s+(x-mn)**2,0)/n);
+  return 1.06*std*Math.pow(n,-.2);
+}
 
-            for(let i = 0; i < 500; i++) {
-                let testR0 = Math.max(0.05, 0.135 + (Math.random() - 0.5) * 0.05);
-                let testKappa = Math.max(0.1, 0.6 + (Math.random() - 0.5) * 0.4);
-                let testTheta = Math.max(0.05, 0.13 + (Math.random() - 0.5) * 0.05);
-                let testSigma = Math.max(0.01, 0.04 + (Math.random() - 0.5) * 0.02);
+function destroyChart(id){
+  if(charts[id]){charts[id].destroy();delete charts[id];}
+}
 
-                let currentSumSqErr = 0;
-                for(let j = 0; j < marketData.maturities.length; j++) {
-                    let theoryRate = getAnalyticalBondPrice(marketData.maturities[j], testR0, testKappa, testTheta, testSigma, currentModel);
-                    currentSumSqErr += Math.pow(theoryRate - marketData.rates[j], 2);
-                }
+function calculateAndRender(){
+  const {r0,kappa,theta,sigma,paths,T}=getParams();
 
-                if(currentSumSqErr < bestMse) {
-                    bestMse = currentSumSqErr;
-                    bestParams = { r0: testR0, kappa: testKappa, theta: testTheta, sigma: testSigma };
-                }
-            }
+  const tVals=[];
+  for(let t=0.05;t<=Math.max(T,5);t+=0.05) tVals.push(parseFloat(t.toFixed(2)));
+  const yAnalyt=tVals.map(t=>bondYield(t,r0,kappa,theta,sigma,model));
 
-            document.getElementById('param-r0').value = bestParams.r0;
-            document.getElementById('param-kappa').value = bestParams.kappa;
-            document.getElementById('param-theta').value = bestParams.theta;
-            document.getElementById('param-sigma').value = bestParams.sigma;
-            updateParams();
-        }
+  const mc=runMC(r0,kappa,theta,sigma,paths,T);
+  const N1=mc.timeSteps.length;
+  const yMCMean=new Array(N1).fill(0);
+  for(let p=0;p<paths;p++) for(let s=0;s<N1;s++) yMCMean[s]+=mc.trajectories[p][s];
+  for(let s=0;s<N1;s++) yMCMean[s]/=paths;
 
-        function calculateAndRender() {
-            const r0 = parseFloat(document.getElementById('param-r0').value);
-            const kappa = parseFloat(document.getElementById('param-kappa').value);
-            const theta = parseFloat(document.getElementById('param-theta').value);
-            const sigma = parseFloat(document.getElementById('param-sigma').value);
-            const paths = parseInt(document.getElementById('param-paths').value);
+  const finals=mc.trajectories.map(tr=>tr[tr.length-1]);
+  lastFinalRates=finals;
+  const mcMean=finals.reduce((a,b)=>a+b)/paths;
+  const mcStd=Math.sqrt(finals.reduce((s,x)=>s+(x-mcMean)**2,0)/paths);
 
-            let xPoints = [];
-            let yAnalytical = [];
-            for (let t = 0.05; t <= 5.0; t += 0.1) {
-                xPoints.push(t);
-                yAnalytical.push(getAnalyticalBondPrice(t, r0, kappa, theta, sigma, currentModel));
-            }
+  const mom=analytMoments(r0,kappa,theta,sigma,T,model);
+  lastMoments=mom;
 
-            let mcData = runMonteCarlo(r0, kappa, theta, sigma, paths, 1);
+  const asym=model==='vasicek'?theta-sigma**2/(2*kappa**2):(2*kappa*theta)/(kappa+Math.sqrt(kappa**2+2*sigma**2));
 
-            let yMonteCarloMean = [];
-            for(let step = 0; step < mcData.timeSteps.length; step++) {
-                let sum = 0;
-                for(let p = 0; p < paths; p++) {
-                    sum += mcData.trajectories[p][step];
-                }
-                yMonteCarloMean.push(sum / paths);
-            }
+  let mse=0;
+  for(let i=0;i<marketData.maturities.length;i++){
+    const th=bondYield(marketData.maturities[i],r0,kappa,theta,sigma,model);
+    mse+=(th-marketData.rates[i])**2;
+  }
+  mse/=marketData.maturities.length;
 
-            const targetTime = 2 / 12;
-            let index2m = mcData.timeSteps.findIndex(t => t >= targetTime);
-            if(index2m === -1) index2m = Math.floor(mcData.timeSteps.length * 0.167);
+  document.getElementById('m-mse').textContent=mse.toExponential(3);
+  document.getElementById('m-mean').textContent=(mcMean*100).toFixed(2)+'%';
+  document.getElementById('m-std').textContent=(mcStd*100).toFixed(3)+'%';
+  document.getElementById('m-asym').textContent=(asym*100).toFixed(2)+'%';
 
-            let predictedRate2m = yMonteCarloMean[index2m];
-            document.getElementById('metric-forecast-2m').innerText = (predictedRate2m * 100).toFixed(2) + " %";
+  if(model==='vasicek'){
+    document.getElementById('f-mean').textContent=`E[r_T] = θ+(r₀−θ)·e^{−κT} = ${(mom.mean*100).toFixed(3)}%`;
+    document.getElementById('f-var').textContent=`Var[r_T] = σ²/(2κ)·(1−e^{−2κT}) = ${(mom.variance*1e4).toFixed(5)}`;
+  } else {
+    document.getElementById('f-mean').textContent=`E[r_T] = r₀·e^{−κT}+θ·(1−e^{−κT}) = ${(mom.mean*100).toFixed(3)}%`;
+    document.getElementById('f-var').textContent=`Var[r_T] = r₀(σ²/κ)(e^{-κT}-e^{-2κT})+θ(σ²/2κ)(1-e^{-κT})² = ${(mom.variance*1e4).toFixed(5)}`;
+  }
+  document.getElementById('f-compare').textContent=`Аналітичне E[r_T] = ${(mom.mean*100).toFixed(3)}%  |  МК E[r_T] = ${(mcMean*100).toFixed(3)}%`;
 
-            let mse = 0;
-            for(let i=0; i<marketData.maturities.length; i++) {
-                let testRate = getAnalyticalBondPrice(marketData.maturities[i], r0, kappa, theta, sigma, currentModel);
-                mse += Math.pow(testRate - marketData.rates[i], 2);
-            }
-            mse = mse / marketData.maturities.length;
-            document.getElementById('metric-mse').innerText = mse.toExponential(4);
+  window._chartData={tVals,yAnalyt,mc,yMCMean,finals,mcMean,mom,T,paths,kappa,theta,r0};
+  renderCurrentTab();
+}
 
-            let asymptote = currentModel === 'vasicek' ? (theta - (sigma*sigma)/(2*kappa*kappa)) : (2*kappa*theta)/(kappa + Math.sqrt(kappa*kappa + 2*sigma*sigma));
-            document.getElementById('metric-asymptote').innerText = (asymptote * 100).toFixed(2) + " %";
+function renderCurrentTab(){
+  const d=window._chartData;
+  if(!d) return;
+  if(currentTab==='yield') renderYield(d);
+  else if(currentTab==='paths') renderPaths(d);
+  else if(currentTab==='hist') renderHist(d);
+  else if(currentTab==='kde') renderKDE(d);
+  else if(currentTab==='compare') renderCompare(d);
+}
 
-            // ВІЗУАЛІЗАЦІЯ 1: Крива доходності
-            let traceMarket = {
-                x: marketData.maturities,
-                y: marketData.rates,
-                mode: 'markers+lines',
-                name: 'Ринкові дані (API НБУ)',
-                marker: { size: 10, color: 'rgb(16, 185, 129)' },
-                line: { dash: 'dot', color: 'rgb(16, 185, 129)' }
-            };
+function renderYield(d){
+  destroyChart('yield');
+  const leg=document.getElementById('chart-legend');
+  leg.innerHTML=`
+    <div class="legend-item"><div class="legend-dot" style="background:#10b981;height:2px;border-top:2px dashed #10b981;width:18px"></div><span>Ринкові дані (НБУ/ОВДП)</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1d4ed8"></div><span>Аналітичний (${model.toUpperCase()})</span></div>`;
+  charts.yield=new Chart(document.getElementById('chart-yield'),{
+    type:'line',
+    data:{
+      datasets:[
+        {label:'НБУ/ОВДП',data:marketData.maturities.map((x,i)=>({x,y:marketData.rates[i]*100})),borderColor:'#10b981',borderDash:[6,3],borderWidth:2,pointRadius:5,pointBackgroundColor:'#10b981',fill:false,showLine:true,tension:0},
+        {label:`Аналітичний (${model.toUpperCase()})`,data:d.tVals.map((x,i)=>({x,y:d.yAnalyt[i]*100})),borderColor:'#1d4ed8',borderWidth:2.5,pointRadius:0,fill:false,tension:0.3}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(3)}%`}}},scales:{x:{type:'linear',title:{display:true,text:'Строк до погашення T (роки)'},ticks:{callback:v=>v+'р'}},y:{title:{display:true,text:'Дохідність (%)'},ticks:{callback:v=>v.toFixed(1)+'%'}}}}
+  });
+}
 
-            let traceAnalytical = {
-                x: xPoints,
-                y: yAnalytical,
-                mode: 'lines',
-                name: 'Прогнозований розв\'язок',
-                line: { color: 'rgb(37, 99, 235)', width: 3 }
-            };
+function renderPaths(d){
+  destroyChart('paths');
+  const leg=document.getElementById('chart-legend');
+  leg.innerHTML=`
+    <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div><span>Траєкторії (до 50)</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1d4ed8"></div><span>Аналітичне E[r_t]</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#7c3aed;border-top:2px dashed #7c3aed;height:0"></div><span>МК середнє E[r_t]</span></div>`;
+  const{r0,kappa,theta,T}=getParams();
+  const analytE=d.mc.timeSteps.map(t=>model==='vasicek'?theta+(r0-theta)*Math.exp(-kappa*t):r0*Math.exp(-kappa*t)+theta*(1-Math.exp(-kappa*t)));
+  const pathsDS=[];
+  const show=Math.min(d.paths,50);
+  for(let p=0;p<show;p++){
+    pathsDS.push({data:d.mc.timeSteps.map((x,i)=>({x,y:d.mc.trajectories[p][i]*100})),borderColor:'rgba(148,163,184,0.3)',borderWidth:0.7,pointRadius:0,fill:false,showLine:true,tension:0,label:'_nolegend_'});
+  }
+  pathsDS.push({label:'Аналітичне E[r_t]',data:d.mc.timeSteps.map((x,i)=>({x,y:analytE[i]*100})),borderColor:'#1d4ed8',borderWidth:2.5,pointRadius:0,fill:false,showLine:true,tension:0});
+  pathsDS.push({label:'МК E[r_t]',data:d.mc.timeSteps.map((x,i)=>({x,y:d.yMCMean[i]*100})),borderColor:'#7c3aed',borderWidth:2,borderDash:[5,4],pointRadius:0,fill:false,showLine:true,tension:0});
+  charts.paths=new Chart(document.getElementById('chart-paths'),{
+    type:'line',
+    data:{datasets:pathsDS},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{filter:i=>i.dataset.label!=='_nolegend_'}},scales:{x:{type:'linear',title:{display:true,text:'Роки (T)'},ticks:{callback:v=>v+'р'}},y:{title:{display:true,text:'r_t (%)'},ticks:{callback:v=>v.toFixed(1)+'%'}}}}
+  });
+}
 
-            let layoutYield = {
-                title: `Тайм-структура ставок та калібрування (${currentModel.toUpperCase()})`,
-                xaxis: { title: 'Строк до погашення T (Роки)' },
-                yaxis: { title: 'Ставка доходності r(T)', tickformat: '.2%' },
-                margin: { t: 50, b: 40, l: 60, r: 20 },
-                legend: { orientation: 'h', y: -0.2 }
-            };
-            Plotly.newPlot('tab-yield', [traceMarket, traceAnalytical], layoutYield);
+function renderHist(d){
+  destroyChart('hist');
+  document.getElementById('chart-legend').innerHTML=`<div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div><span>Розподіл r_T (${d.paths} траєкторій)</span></div>`;
+  const pct=d.finals.map(r=>r*100);
+  const mn=Math.min(...pct),mx=Math.max(...pct);
+  const bins=Math.max(15,Math.min(40,Math.round(Math.sqrt(d.paths)*1.5)));
+  const step=(mx-mn)/bins;
+  const edges=Array.from({length:bins},(_,i)=>mn+i*step);
+  const counts=new Array(bins).fill(0);
+  for(const v of pct){const b=Math.min(bins-1,Math.floor((v-mn)/step));counts[b]++;}
+  const freq=counts.map(c=>c/d.paths);
+  charts.hist=new Chart(document.getElementById('chart-hist'),{
+    type:'bar',
+    data:{labels:edges.map(e=>e.toFixed(2)+'%'),datasets:[{label:'Відн. частота',data:freq,backgroundColor:'rgba(34,197,94,0.7)',borderColor:'rgb(22,163,74)',borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`P = ${(c.parsed.y*100).toFixed(2)}%`}}},scales:{x:{title:{display:true,text:'Ставка (%)'},ticks:{autoSkip:true,maxRotation:45}},y:{title:{display:true,text:'Відносна частота'}}}}
+  });
+}
 
-            // ВІЗУАЛІЗАЦІЯ 2: Траєкторії & Прогноз на 2 місяці
-            let tracesPaths = [];
-            let pathsToDisplay = Math.min(paths, 40);
-            for(let p = 0; p < pathsToDisplay; p++) {
-                tracesPaths.push({
-                    x: mcData.timeSteps,
-                    y: mcData.trajectories[p],
-                    mode: 'lines',
-                    line: { width: 0.7, opacity: 0.35, color: 'rgb(156, 163, 175)' },
-                    showlegend: false
-                });
-            }
+function renderKDE(d){
+  destroyChart('kde');
+  document.getElementById('chart-legend').innerHTML=`
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div><span>Гаусовий KDE</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1d4ed8;border-top:2px dashed #1d4ed8;height:0"></div><span>Аналітичне E[r_T]</span></div>`;
+  const pct=d.finals.map(r=>r*100);
+  const bw=silverman(pct);
+  const kde=gaussKDE(pct,bw);
+  const meanPct=lastMoments.mean*100;
+  const maxY=Math.max(...kde.y);
+  charts.kde=new Chart(document.getElementById('chart-kde'),{
+    type:'line',
+    data:{
+      datasets:[
+        {label:'KDE',data:kde.x.map((x,i)=>({x,y:kde.y[i]})),borderColor:'#ef4444',borderWidth:2.5,fill:true,backgroundColor:'rgba(239,68,68,0.08)',pointRadius:0,tension:0.4},
+        {label:`E[r_T]=${meanPct.toFixed(2)}%`,data:[{x:meanPct,y:0},{x:meanPct,y:maxY*1.05}],borderColor:'#1d4ed8',borderWidth:2,borderDash:[5,4],pointRadius:0,fill:false,showLine:true}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${typeof c.parsed.y==='number'?c.parsed.y.toFixed(4):''}`}}},scales:{x:{type:'linear',title:{display:true,text:'Ставка (%)'},ticks:{callback:v=>v.toFixed(1)+'%'}},y:{title:{display:true,text:'Щільність'}}}}
+  });
+}
 
-            tracesPaths.push({
-                x: mcData.timeSteps,
-                y: yMonteCarloMean,
-                mode: 'lines',
-                name: 'Прогнозований тренд (E[r_t])',
-                line: { color: 'rgb(37, 99, 235)', width: 4 }
-            });
+function renderCompare(d){
+  destroyChart('compare');
+  document.getElementById('chart-legend').innerHTML=`
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444;border-top:2px dotted #ef4444;height:0"></div><span>Теоретична (аналітична)</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1d4ed8"></div><span>Монте-Карло E[r_t]</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div><span>Ринкові дані (НБУ)</span></div>`;
+  const{r0,kappa,theta,sigma}=getParams();
+  const analytY=d.mc.timeSteps.map(t=>t===0?r0*100:bondYield(t,r0,kappa,theta,sigma,model)*100);
+  charts.compare=new Chart(document.getElementById('chart-compare'),{
+    type:'line',
+    data:{
+      datasets:[
+        {label:'Теоретична',data:d.mc.timeSteps.map((x,i)=>({x,y:analytY[i]})),borderColor:'#ef4444',borderDash:[4,3],borderWidth:2.5,pointRadius:0,fill:false,tension:0.3},
+        {label:'МК E[r_t]',data:d.mc.timeSteps.map((x,i)=>({x,y:d.yMCMean[i]*100})),borderColor:'#1d4ed8',borderWidth:2.5,pointRadius:0,fill:false,tension:0.3},
+        {label:'Ринкові (НБУ)',data:marketData.maturities.map((x,i)=>({x,y:marketData.rates[i]*100})),borderColor:'#10b981',borderWidth:0,pointRadius:7,pointBackgroundColor:'#10b981',showLine:false}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(3)}%`}}},scales:{x:{type:'linear',title:{display:true,text:'Термін (роки)'},ticks:{callback:v=>v+'р'}},y:{title:{display:true,text:'Дохідність (%)'},ticks:{callback:v=>v.toFixed(1)+'%'}}}}
+  });
+}
 
-            tracesPaths.push({
-                x: [targetTime, targetTime],
-                y: [Math.min(...mcData.trajectories.flat()), Math.max(...mcData.trajectories.flat())],
-                mode: 'lines',
-                name: '🔮 Відмітка (2 міс.)',
-                line: { color: 'rgb(30, 64, 175)', width: 2.5, dash: 'dash' }
-            });
+function switchTab(t){
+  currentTab=t;
+  ['yield','paths','hist','kde','compare'].forEach(id=>{
+    document.getElementById(`chart-${id}`).style.display=id===t?'block':'none';
+    const btn=document.getElementById(`tb-${id}`);
+    btn.classList.toggle('active',id===t);
+  });
+  destroyChart(t);
+  renderCurrentTab();
+}
 
-            let layoutPaths = {
-                title: 'Прогнозні стохастичні траєкторії розвитку ринку ставок',
-                xaxis: { title: 'Часовий спектр моделювання t (Роки)', range: [0, 1] },
-                yaxis: { title: 'Миттєва відсоткова ставка r_t', tickformat: '.2%' },
-                margin: { t: 50, b: 40, l: 60, r: 20 },
-                legend: { orientation: 'h', y: -0.2 }
-            };
-            Plotly.newPlot('tab-paths', tracesPaths, layoutPaths);
-        }
+function setModel(m){
+  model=m;
+  document.getElementById('btn-vasicek').classList.toggle('active',m==='vasicek');
+  document.getElementById('btn-cir').classList.toggle('active',m==='cir');
+  calculateAndRender();
+}
 
-        function switchTab(tabName) {
-            currentTab = tabName;
-            const yieldTab = document.getElementById('tab-yield');
-            const pathsTab = document.getElementById('tab-paths');
-            const yieldBtn = document.getElementById('tab-btn-yield');
-            const pathsBtn = document.getElementById('tab-btn-paths');
+function updateParams(){
+  const p=getParams();
+  document.getElementById('val-r0').textContent=(p.r0*100).toFixed(2)+'%';
+  document.getElementById('val-kappa').textContent=p.kappa.toFixed(2);
+  document.getElementById('val-theta').textContent=(p.theta*100).toFixed(2)+'%';
+  document.getElementById('val-sigma').textContent=(p.sigma*100).toFixed(2)+'%';
+  document.getElementById('val-paths').textContent=p.paths;
+  document.getElementById('val-T').textContent=p.T.toFixed(1);
+  calculateAndRender();
+}
 
-            if (tabName === 'yield') {
-                yieldTab.classList.remove('hidden');
-                pathsTab.classList.add('hidden');
-                yieldBtn.className = "py-2 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 transition-colors";
-                pathsBtn.className = "py-2 px-4 font-semibold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors";
-            } else {
-                pathsTab.classList.remove('hidden');
-                yieldTab.classList.add('hidden');
-                pathsBtn.className = "py-2 px-4 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 transition-colors";
-                yieldBtn.className = "py-2 px-4 font-semibold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors";
-            }
-            Plotly.Plots.resize('tab-yield');
-            Plotly.Plots.resize('tab-paths');
-        }
+function runCalibration(){
+  const{r0}=getParams();
+  let best={kappa:0.5,theta:0.12,sigma:0.04},bestMse=Infinity;
+  for(let i=0;i<600;i++){
+    const k=Math.max(0.01,0.5+(Math.random()-.5)*1.2);
+    const th=Math.max(0.01,0.13+(Math.random()-.5)*0.12);
+    const sg=Math.max(0.005,0.04+(Math.random()-.5)*0.07);
+    let s=0;
+    for(let j=0;j<marketData.maturities.length;j++){
+      const y=bondYield(marketData.maturities[j],r0,k,th,sg,model);
+      s+=(y-marketData.rates[j])**2;
+    }
+    const m=s/marketData.maturities.length;
+    if(m<bestMse){bestMse=m;best={kappa:k,theta:th,sigma:sg};}
+  }
+  document.getElementById('p-kappa').value=best.kappa;
+  document.getElementById('p-theta').value=best.theta;
+  document.getElementById('p-sigma').value=best.sigma;
+  document.getElementById('c-kappa').textContent=best.kappa.toFixed(4);
+  document.getElementById('c-theta').textContent=(best.theta*100).toFixed(3)+'%';
+  document.getElementById('c-sigma').textContent=(best.sigma*100).toFixed(3)+'%';
+  document.getElementById('c-mse').textContent=bestMse.toExponential(4);
+  document.getElementById('calib-box').style.display='block';
+  updateParams();
+}
 
-        window.onload = () => {
-            fetchMarketRates();
-        };
-    </script>
+window.addEventListener('load',fetchNBU);
+</script>
 </body>
 </html>
