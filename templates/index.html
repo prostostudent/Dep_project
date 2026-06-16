@@ -92,27 +92,27 @@ canvas{position:absolute;top:0;left:0}
       <span>Поточна ставка (r₀) <span class="nbu-tag">НБУ</span></span>
       <span class="param-val" id="val-r0">—</span>
     </div>
-    <input type="range" id="p-r0" min="0.001" max="0.35" step="0.001" value="0.135" oninput="updateParams()">
+    <input type="range" id="p-r0" min="0.001" max="0.35" step="0.001" value="0.149" oninput="updateParams()">
   </div>
   <div class="param-row">
     <div class="param-label"><span>Швидкість конвергенції (κ)</span><span class="param-val" id="val-kappa">0.50</span></div>
-    <input type="range" id="p-kappa" min="0.01" max="2.0" step="0.01" value="0.5" oninput="updateParams()">
+    <input type="range" id="p-kappa" min="0.01" max="2.0" step="0.01" value="0.52" oninput="updateParams()">
   </div>
   <div class="param-row">
     <div class="param-label"><span>Довгостр. рівень (θ)</span><span class="param-val" id="val-theta">0.110</span></div>
-    <input type="range" id="p-theta" min="0.01" max="0.35" step="0.005" value="0.11" oninput="updateParams()">
+    <input type="range" id="p-theta" min="0.01" max="0.35" step="0.005" value="0.172" oninput="updateParams()">
   </div>
   <div class="param-row">
     <div class="param-label"><span>Волатильність (σ)</span><span class="param-val" id="val-sigma">0.040</span></div>
-    <input type="range" id="p-sigma" min="0.005" max="0.15" step="0.001" value="0.04" oninput="updateParams()">
+    <input type="range" id="p-sigma" min="0.005" max="0.15" step="0.001" value="0.025" oninput="updateParams()">
   </div>
   <div class="param-row">
     <div class="param-label"><span>Траєкторій Монте-Карло</span><span class="param-val" id="val-paths">100</span></div>
-    <input type="range" id="p-paths" min="10" max="500" step="10" value="100" oninput="updateParams()">
+    <input type="range" id="p-paths" min="10" max="500" step="10" value="250" oninput="updateParams()">
   </div>
   <div class="param-row">
     <div class="param-label"><span>Горизонт T (роки)</span><span class="param-val" id="val-T">4.0</span></div>
-    <input type="range" id="p-T" min="0.5" max="10" step="0.5" value="4" oninput="updateParams()">
+    <input type="range" id="p-T" min="0.5" max="10" step="0.5" value="5" oninput="updateParams()">
   </div>
 
   <button class="btn-primary btn-calib" onclick="runCalibration()">🎯 Калібрувати під ОВДП</button>
