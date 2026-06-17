@@ -420,7 +420,7 @@ function renderPaths(d){
   destroyChart('paths');
   const leg=document.getElementById('chart-legend');
   leg.innerHTML=`
-    <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div><span>Траєкторії (до 50)</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div><span>Траєкторії</span></div>
     <div class="legend-item"><div class="legend-dot" style="background:#1d4ed8"></div><span>Аналітичне E[r_t]</span></div>
     <div class="legend-item"><div class="legend-dot" style="background:#7c3aed;border-top:2px dashed #7c3aed;height:0"></div><span>МК середнє E[r_t]</span></div>`;
   const{r0,kappa,theta,T}=getParams();
